@@ -264,13 +264,15 @@ function App() {
         rc.linearPath(el.points.map(p => [p.x, p.y]), opts)
       } else if (el.type === 'image' && el.src) {
         const cachedImg = imageCacheRef.current.get(el.id)
-        if (!cachedImg) {
-          const newImg = new Image()
+        if (cachedImg && cachedImg.complete && cachedImg.naturalWidth > 0) {
+          ctx.drawImage(cachedImg, el.x, el.y, el.w || 300, el.h || 200)
+        } else if (!cachedImg) {
+          const newImg = new (window as any).Image()
           newImg.src = el.src
           imageCacheRef.current.set(el.id, newImg)
-          newImg.onload = () => draw()
-        } else if (cachedImg.complete && cachedImg.naturalWidth > 0) {
-          ctx.drawImage(cachedImg, el.x, el.y, el.w || 300, el.h || 200)
+          newImg.onload = () => {
+            draw()
+          }
         }
       } else if (el.type === 'text' && el.text) {
         ctx.fillStyle = el.stroke
@@ -808,12 +810,12 @@ function App() {
         if (w > 4 && h > 4) {
           const newEl: Element = {
             id: crypto.randomUUID(),
-            type: tool,
+            type: tool as 'rect' | 'ellipse' | 'diamond',
             x: Math.min(startWorld.x, world.x),
             y: Math.min(startWorld.y, world.y),
             w,
             h,
-            fill: tool === 'line' || tool === 'arrow' ? 'transparent' : DEFAULT_FILL,
+            fill: DEFAULT_FILL,
             stroke: DEFAULT_STROKE,
             strokeWidth: DEFAULT_STROKE_WIDTH,
             opacity: 1
