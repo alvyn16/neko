@@ -408,7 +408,7 @@ function App() {
 
       if (mod && e.key.toLowerCase() === 'z') {
         e.preventDefault()
-        if (e.shiftKey) redo() else undo()
+        if (e.shiftKey) { redo(); } else { undo(); }
       }
       if (mod && e.key.toLowerCase() === 'c') { e.preventDefault(); copySelected() }
       if (mod && e.key.toLowerCase() === 'v') { e.preventDefault(); paste() }
