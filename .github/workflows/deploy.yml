@@ -24,7 +24,9 @@ jobs:
         with:
           node-version: '20'
       - name: Install
-        run: npm install
+        run: |
+          npm install --package-lock-only || true
+          npm install
       - name: Build
         run: npm run build
       - name: Setup Pages
