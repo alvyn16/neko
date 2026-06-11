@@ -263,15 +263,14 @@ function App() {
       } else if (el.type === 'pencil' && el.points && el.points.length > 1) {
         rc.linearPath(el.points.map(p => [p.x, p.y]), opts)
       } else if (el.type === 'image' && el.src) {
-        let img = imageCacheRef.current.get(el.id)
-        if (!img) {
-          img = new Image()
-          img.src = el.src
-          imageCacheRef.current.set(el.id, img)
-          img.onload = () => draw()
-        }
-        if (img.complete && img.naturalWidth > 0) {
-          ctx.drawImage(img, el.x, el.y, el.w || 300, el.h || 200)
+        const cachedImg = imageCacheRef.current.get(el.id)
+        if (!cachedImg) {
+          const newImg = new Image()
+          newImg.src = el.src
+          imageCacheRef.current.set(el.id, newImg)
+          newImg.onload = () => draw()
+        } else if (cachedImg.complete && cachedImg.naturalWidth > 0) {
+          ctx.drawImage(cachedImg, el.x, el.y, el.w || 300, el.h || 200)
         }
       } else if (el.type === 'text' && el.text) {
         ctx.fillStyle = el.stroke
@@ -574,7 +573,6 @@ function App() {
       // Check handles first (for resize)
       const selected = elements.find(el => selectedIds.includes(el.id))
       if (selected && selectedIds.length === 1) {
-        const screenPos = worldToScreen(selected.x, selected.y)
         const b = getElementBounds(selected)
         const s = worldToScreen
         // Simple check for corners (tl, tr, bl, br)
