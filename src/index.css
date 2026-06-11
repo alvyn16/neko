@@ -1,0 +1,275 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --neko-bg: #0a0a0c;
+  --neko-surface: #111113;
+  --neko-panel: #18181b;
+  --neko-border: #27272a;
+  --neko-text: #e4e4e7;
+  --neko-muted: #71717a;
+  --neko-accent: #c084fc;
+  --neko-accent-dark: #a855f7;
+}
+
+body {
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  background: var(--neko-bg);
+  color: var(--neko-text);
+  margin: 0;
+  overflow: hidden;
+}
+
+.neko-app {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  width: 100vw;
+  overflow: hidden;
+}
+
+/* Top Navbar */
+.navbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.5rem 1rem;
+  background: var(--neko-surface);
+  border-bottom: 1px solid var(--neko-border);
+  z-index: 50;
+}
+
+.navbar-left {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.logo {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-weight: 700;
+  font-size: 1.25rem;
+  color: white;
+}
+
+.logo-dot {
+  width: 8px;
+  height: 8px;
+  background: var(--neko-accent);
+  border-radius: 50%;
+}
+
+.project-name {
+  background: transparent;
+  border: 1px solid transparent;
+  color: var(--neko-text);
+  font-size: 0.875rem;
+  padding: 0.25rem 0.5rem;
+  border-radius: 4px;
+  min-width: 180px;
+}
+
+.project-name:focus {
+  outline: none;
+  border-color: var(--neko-accent);
+  background: var(--neko-panel);
+}
+
+/* Main Layout */
+.main {
+  display: flex;
+  flex: 1;
+  overflow: hidden;
+  position: relative;
+}
+
+/* Toolbar */
+.toolbar {
+  position: absolute;
+  left: 1rem;
+  top: 1rem;
+  z-index: 40;
+  background: rgba(24, 24, 27, 0.95);
+  backdrop-filter: blur(12px);
+  border: 1px solid var(--neko-border);
+  border-radius: 12px;
+  padding: 0.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.3);
+}
+
+.tool-btn {
+  width: 42px;
+  height: 42px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 8px;
+  color: var(--neko-muted);
+  transition: all 0.1s ease;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+}
+
+.tool-btn:hover {
+  background: var(--neko-panel);
+  color: var(--neko-text);
+}
+
+.tool-btn.active {
+  background: var(--neko-accent);
+  color: white;
+}
+
+/* Canvas Container */
+.canvas-container {
+  flex: 1;
+  position: relative;
+  overflow: hidden;
+  background: #0a0a0c;
+  cursor: crosshair;
+}
+
+.canvas-container.hand {
+  cursor: grab;
+}
+
+.canvas-container.hand:active {
+  cursor: grabbing;
+}
+
+canvas {
+  display: block;
+  touch-action: none;
+}
+
+/* Properties Panel */
+.properties {
+  position: absolute;
+  right: 1rem;
+  top: 1rem;
+  z-index: 40;
+  width: 260px;
+  background: rgba(24, 24, 27, 0.95);
+  backdrop-filter: blur(12px);
+  border: 1px solid var(--neko-border);
+  border-radius: 12px;
+  padding: 1rem;
+  box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.3);
+  font-size: 0.875rem;
+}
+
+.properties h3 {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--neko-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 0.75rem;
+}
+
+.prop-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 0.75rem;
+}
+
+.prop-row:last-child {
+  margin-bottom: 0;
+}
+
+.prop-label {
+  color: var(--neko-muted);
+  font-size: 0.75rem;
+}
+
+.color-input {
+  width: 42px;
+  height: 28px;
+  padding: 0;
+  border: 1px solid var(--neko-border);
+  border-radius: 6px;
+  background: transparent;
+  cursor: pointer;
+}
+
+input[type="range"] {
+  accent-color: var(--neko-accent);
+}
+
+/* Status / Footer */
+.status-bar {
+  position: absolute;
+  bottom: 0.75rem;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 30;
+  background: rgba(24, 24, 27, 0.8);
+  backdrop-filter: blur(8px);
+  border: 1px solid var(--neko-border);
+  border-radius: 9999px;
+  padding: 0.25rem 0.75rem;
+  font-size: 0.75rem;
+  color: var(--neko-muted);
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+/* Buttons */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 0.875rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+  border-radius: 8px;
+  border: 1px solid var(--neko-border);
+  background: var(--neko-panel);
+  color: var(--neko-text);
+  cursor: pointer;
+  transition: all 0.1s;
+}
+
+.btn:hover {
+  background: #27272a;
+  border-color: #3f3f46;
+}
+
+.btn-primary {
+  background: var(--neko-accent);
+  color: white;
+  border-color: var(--neko-accent-dark);
+}
+
+.btn-primary:hover {
+  background: #a855f7;
+}
+
+/* Text input overlay for adding text */
+.text-input-overlay {
+  position: absolute;
+  z-index: 50;
+  background: var(--neko-panel);
+  border: 1px solid var(--neko-accent);
+  border-radius: 6px;
+  padding: 0.25rem 0.5rem;
+  box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.2);
+}
+
+.text-input-overlay input {
+  background: transparent;
+  border: none;
+  color: white;
+  font-size: 16px;
+  outline: none;
+  min-width: 120px;
+}
