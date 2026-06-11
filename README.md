@@ -1,7 +1,10 @@
 # Neko
 
-> A collaborative infinite canvas for ideas.  
-> Open-source whiteboard inspired by Excalidraw. Built for education, portfolios, and real creative work.
+> A collaborative infinite canvas for ideas.
+
+**🚀 [Live Demo](https://alvyn16.github.io/neko/)** — Try it now in your browser!
+
+![Neko Screenshot](https://via.placeholder.com/1200x630/0a0a0c/c084fc?text=Neko+Whiteboard)
 
 Neko is a modern, production-ready whiteboard application featuring hand-drawn style rendering, infinite canvas, real-time ready architecture, and polished UX. Built from scratch with React, TypeScript, and Rough.js.
 
@@ -37,8 +40,6 @@ npm run dev
 
 Open http://localhost:5173 and start drawing!
 
-Everything auto-saves to localStorage.
-
-## License
+## 📄 License
 
 MIT © 2026
