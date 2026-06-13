@@ -1,5 +1,5 @@
 import { useCallback } from 'react'
-import { Element, Point } from '../store/useNekoStore'
+import type { Element, Point } from '../store/useNekoStore'
 
 interface UseDrawingProps {
   tool: string
