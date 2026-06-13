@@ -1,5 +1,5 @@
 import { useCallback } from 'react'
-import { Point, Element, View } from '../store/useNekoStore'
+import type { Point, Element, View } from '../store/useNekoStore'
 
 export function useCanvasTransform(view: View) {
   const screenToWorld = useCallback((sx: number, sy: number): Point => ({
