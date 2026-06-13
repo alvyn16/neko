@@ -1,6 +1,4 @@
 import React, { useEffect, useRef, useCallback, useState } from 'react'
-import { Toaster, toast } from 'sonner'
-import { AnimatePresence } from 'framer-motion'
 import rough from 'roughjs/bin/rough'
 
 import { useNekoStore, type Element, type Point, type View } from './store/useNekoStore'
@@ -38,6 +36,7 @@ export default function App() {
   const [textValue, setTextValue] = useState('')
   const [isDrawing, setIsDrawing] = useState(false)
   const [showLayers, setShowLayers] = useState(false)
+  const [toastMsg, setToastMsg] = useState('')
 
   const currentPencilPointsRef = useRef<Point[]>([])
   const canvasRef = useRef<HTMLCanvasElement>(null)
@@ -49,7 +48,11 @@ export default function App() {
 
   const { screenToWorld, getElementBounds, hitTest } = useCanvasTransform(view)
 
-  // Update elements with history + autosave
+  const showToast = (msg: string) => {
+    setToastMsg(msg)
+    setTimeout(() => setToastMsg(''), 2000)
+  }
+
   const updateElements = useCallback((newElements: Element[]) => {
     setElements(newElements)
     pushToHistory(newElements)
@@ -154,7 +157,6 @@ export default function App() {
     return () => window.removeEventListener('resize', resizeCanvas)
   }, [resizeCanvas])
 
-  // Mouse handlers
   const handleMouseDown = (e: React.MouseEvent) => {
     const rect = canvasRef.current!.getBoundingClientRect()
     const sx = e.clientX - rect.left
@@ -286,7 +288,6 @@ export default function App() {
     setView({ x: sx - before.x * nz, y: sy - before.y * nz, zoom: nz })
   }
 
-  // Touch
   const { handleTouchStart, handleTouchMove, handleTouchEnd } = useTouchGestures(view, setView, (type, clientX, clientY) => {
     const fake = { clientX, clientY } as any
     if (type === 'down') handleMouseDown(fake)
@@ -309,12 +310,12 @@ export default function App() {
     if (!selectedIds.length) return
     updateElements(elements.filter(el => !selectedIds.includes(el.id)))
     setSelectedIds([])
-    toast.success('Deleted')
+    showToast('Deleted')
   }
 
-  const exportPNG = () => toast(elements.length ? 'PNG exported (demo)' : 'Nothing to export')
+  const exportPNG = () => showToast(elements.length ? 'PNG exported (demo)' : 'Nothing to export')
   const exportSVG = () => {
-    if (!elements.length) return toast.error('Nothing to export')
+    if (!elements.length) return showToast('Nothing to export')
     let svg = `<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="800">`
     elements.forEach(el => {
       if (el.type === 'rect') svg += `<rect x="${el.x}" y="${el.y}" width="${el.w}" height="${el.h}" fill="${el.fill}" stroke="${el.stroke}" stroke-width="${el.strokeWidth}"/>`
@@ -324,7 +325,7 @@ export default function App() {
     const url = URL.createObjectURL(new Blob([svg], { type: 'image/svg+xml' }))
     const a = document.createElement('a')
     a.href = url; a.download = `${projectName}.svg`; a.click(); URL.revokeObjectURL(url)
-    toast.success('SVG exported')
+    showToast('SVG exported')
   }
 
   const saveProject = () => {
@@ -332,7 +333,7 @@ export default function App() {
     const url = URL.createObjectURL(new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' }))
     const a = document.createElement('a')
     a.href = url; a.download = `${projectName}.neko.json`; a.click(); URL.revokeObjectURL(url)
-    toast.success('Project saved')
+    showToast('Project saved')
   }
 
   const loadProject = (file: File) => {
@@ -345,9 +346,9 @@ export default function App() {
           if (data.view) setView(data.view)
           if (data.projectName) setProjectName(data.projectName)
           setSelectedIds([])
-          toast.success('Project loaded')
+          showToast('Project loaded')
         }
-      } catch { toast.error('Invalid file') }
+      } catch { showToast('Invalid file') }
     }
     reader.readAsText(file)
   }
@@ -356,8 +357,6 @@ export default function App() {
 
   return (
     <div className="neko-app">
-      <Toaster position="top-center" richColors closeButton />
-
       <Navbar
         projectName={projectName}
         onProjectNameChange={setProjectName}
@@ -380,9 +379,7 @@ export default function App() {
         >
           <canvas ref={canvasRef} />
 
-          <AnimatePresence>
-            {elements.length === 0 && !dragState.type && <EmptyState onStartDrawing={() => setTool('pencil')} />}
-          </AnimatePresence>
+          {elements.length === 0 && !dragState.type && <EmptyState onStartDrawing={() => setTool('pencil')} />}
 
           {showTextInput && (
             <div className="text-input-overlay" style={{ left: textInputPos.x, top: textInputPos.y }}>
@@ -391,25 +388,21 @@ export default function App() {
           )}
         </div>
 
-        <AnimatePresence>
-          {selectedElement && (
-            <PropertiesPanel element={selectedElement} onUpdate={(updates) => updateElements(elements.map(el => el.id === selectedElement.id ? { ...el, ...updates } : el))} />
-          )}
-        </AnimatePresence>
+        {selectedElement && (
+          <PropertiesPanel element={selectedElement} onUpdate={(updates) => updateElements(elements.map(el => el.id === selectedElement.id ? { ...el, ...updates } : el))} />
+        )}
 
-        <AnimatePresence>
-          {showLayers && (
-            <LayersPanel
-              elements={elements}
-              selectedIds={selectedIds}
-              onSelect={(id) => setSelectedIds([id])}
-              onDelete={(id) => {
-                updateElements(elements.filter(el => el.id !== id))
-                if (selectedIds.includes(id)) setSelectedIds([])
-              }}
-            />
-          )}
-        </AnimatePresence>
+        {showLayers && (
+          <LayersPanel
+            elements={elements}
+            selectedIds={selectedIds}
+            onSelect={(id) => setSelectedIds([id])}
+            onDelete={(id) => {
+              updateElements(elements.filter(el => el.id !== id))
+              if (selectedIds.includes(id)) setSelectedIds([])
+            }}
+          />
+        )}
 
         <StatusBar tool={tool} elementCount={elements.length} zoom={view.zoom} selectedCount={selectedIds.length} />
 
@@ -417,6 +410,8 @@ export default function App() {
       </div>
 
       <WelcomeModal open={showWelcome} onClose={() => { setShowWelcome(false); localStorage.setItem('neko-visited', 'true') }} />
+
+      {toastMsg && <div className="toast">{toastMsg}</div>}
     </div>
   )
 }
