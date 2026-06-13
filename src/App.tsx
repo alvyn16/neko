@@ -101,13 +101,17 @@ export default function App() {
       ctx.globalAlpha = el.opacity ?? 1
       const opts: any = { fill: el.fill, stroke: el.stroke, strokeWidth: el.strokeWidth, roughness: 1.1, bowing: 0.6 }
 
-      if (el.type === 'rect') rc.rectangle(el.x, el.y, el.w || 0, el.h || 0, opts)
-      else if (el.type === 'ellipse') rc.ellipse(el.x + (el.w||0)/2, el.y + (el.h||0)/2, el.w||0, el.h||0, opts)
-      else if (el.type === 'diamond') {
-        const cx = el.x + (el.w||0)/2, cy = el.y + (el.h||0)/2, hw = (el.w||0)/2, hh = (el.h||0)/2
-        rc.polygon([[cx, cy-hh], [cx+hw, cy], [cx, cy+hh], [cx-hw, cy]], opts)
-      }
-      else if ((el.type === 'line' || el.type === 'arrow') && el.points?.length >= 2) {
+      if (el.type === 'rect') {
+        rc.rectangle(el.x, el.y, el.w || 0, el.h || 0, opts)
+      } else if (el.type === 'ellipse') {
+        rc.ellipse(el.x + (el.w || 0) / 2, el.y + (el.h || 0) / 2, el.w || 0, el.h || 0, opts)
+      } else if (el.type === 'diamond') {
+        const cx = el.x + (el.w || 0) / 2
+        const cy = el.y + (el.h || 0) / 2
+        const hw = (el.w || 0) / 2
+        const hh = (el.h || 0) / 2
+        rc.polygon([[cx, cy - hh], [cx + hw, cy], [cx, cy + hh], [cx - hw, cy]], opts)
+      } else if ((el.type === 'line' || el.type === 'arrow') && el.points && el.points.length >= 2) {
         const [p1, p2] = el.points
         rc.line(p1.x, p1.y, p2.x, p2.y, opts)
         if (el.type === 'arrow') {
@@ -116,14 +120,13 @@ export default function App() {
           rc.line(p2.x, p2.y, p2.x - hl * Math.cos(ang - 0.5), p2.y - hl * Math.sin(ang - 0.5), { stroke: el.stroke, strokeWidth: el.strokeWidth })
           rc.line(p2.x, p2.y, p2.x - hl * Math.cos(ang + 0.5), p2.y - hl * Math.sin(ang + 0.5), { stroke: el.stroke, strokeWidth: el.strokeWidth })
         }
-      }
-      else if (el.type === 'pencil' && el.points) rc.linearPath(el.points.map(p => [p.x, p.y]), opts)
-      else if (el.type === 'image' && el.src) {
+      } else if (el.type === 'pencil' && el.points && el.points.length > 1) {
+        rc.linearPath(el.points.map(p => [p.x, p.y]), opts)
+      } else if (el.type === 'image' && el.src) {
         let img = imageCacheRef.current.get(el.id)
         if (!img) { img = new Image(); img.src = el.src; imageCacheRef.current.set(el.id, img); img.onload = draw }
         if (img.complete) ctx.drawImage(img, el.x, el.y, el.w || 300, el.h || 200)
-      }
-      else if (el.type === 'text' && el.text) {
+      } else if (el.type === 'text' && el.text) {
         ctx.fillStyle = el.stroke
         ctx.font = `${el.fontSize || 18}px system-ui`
         ctx.fillText(el.text, el.x, el.y)
