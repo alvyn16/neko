@@ -1,25 +1,18 @@
 import { useRef, useCallback } from 'react'
-import { View } from '../store/useNekoStore'
-
-interface TouchGestureState {
-  initialDistance: number
-  initialZoom: number
-  lastCenter: { x: number; y: number }
-}
+import type { View } from '../store/useNekoStore'
 
 export function useTouchGestures(
   view: View,
-  setView: (view: View | ((prev: View) => View)) => void,
+  setView: (v: View | ((prev: View) => View)) => void,
   onSingleFinger: (type: 'down' | 'move' | 'up', clientX: number, clientY: number) => void
 ) {
-  const gestureRef = useRef<TouchGestureState | null>(null)
+  const gestureRef = useRef<any>(null)
 
-  const getDistance = (touches: React.TouchList) => {
-    if (touches.length < 2) return 0
-    const dx = touches[0].clientX - touches[1].clientX
-    const dy = touches[0].clientY - touches[1].clientY
-    return Math.hypot(dx, dy)
-  }
+  const getDistance = (touches: React.TouchList) =>
+    touches.length < 2 ? 0 : Math.hypot(
+      touches[0].clientX - touches[1].clientX,
+      touches[0].clientY - touches[1].clientY
+    )
 
   const getCenter = (touches: React.TouchList, rect: DOMRect) => {
     if (touches.length === 1) {
@@ -33,25 +26,20 @@ export function useTouchGestures(
 
   const handleTouchStart = useCallback((e: React.TouchEvent, rect: DOMRect) => {
     e.preventDefault()
-
     if (e.touches.length === 1) {
       gestureRef.current = null
       onSingleFinger('down', e.touches[0].clientX, e.touches[0].clientY)
     } else if (e.touches.length === 2) {
-      const distance = getDistance(e.touches)
-      const center = getCenter(e.touches, rect)
-
       gestureRef.current = {
-        initialDistance: distance,
+        initialDistance: getDistance(e.touches),
         initialZoom: view.zoom,
-        lastCenter: center,
+        lastCenter: getCenter(e.touches, rect),
       }
     }
   }, [view.zoom, onSingleFinger])
 
   const handleTouchMove = useCallback((e: React.TouchEvent, rect: DOMRect) => {
     e.preventDefault()
-
     if (e.touches.length === 1 && !gestureRef.current) {
       onSingleFinger('move', e.touches[0].clientX, e.touches[0].clientY)
     } else if (e.touches.length === 2 && gestureRef.current) {
@@ -66,17 +54,15 @@ export function useTouchGestures(
       const dy = currentCenter.y - state.lastCenter.y
 
       setView(prev => {
-        const worldX = (currentCenter.x - prev.x) / prev.zoom
-        const worldY = (currentCenter.y - prev.y) / prev.zoom
-
+        const wx = (currentCenter.x - prev.x) / prev.zoom
+        const wy = (currentCenter.y - prev.y) / prev.zoom
         return {
-          x: currentCenter.x - worldX * newZoom + dx * 0.6,
-          y: currentCenter.y - worldY * newZoom + dy * 0.6,
+          x: currentCenter.x - wx * newZoom + dx * 0.6,
+          y: currentCenter.y - wy * newZoom + dy * 0.6,
           zoom: newZoom,
         }
       })
-
-      gestureRef.current = { ...state, lastCenter: currentCenter }
+      gestureRef.current.lastCenter = currentCenter
     }
   }, [setView, onSingleFinger])
 
@@ -84,14 +70,10 @@ export function useTouchGestures(
     if (e.touches.length === 0) {
       gestureRef.current = null
       onSingleFinger('up', 0, 0)
-    } else if (e.touches.length === 1 && gestureRef.current) {
+    } else if (e.touches.length === 1) {
       gestureRef.current = null
     }
   }, [onSingleFinger])
 
-  return {
-    handleTouchStart,
-    handleTouchMove,
-    handleTouchEnd,
-  }
+  return { handleTouchStart, handleTouchMove, handleTouchEnd }
 }
