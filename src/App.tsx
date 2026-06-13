@@ -1,11 +1,11 @@
 import React, { useEffect, useRef, useCallback, useState } from 'react'
 import { Toaster, toast } from 'sonner'
 import { AnimatePresence } from 'framer-motion'
+import rough from 'roughjs/bin/rough'
 
-import { useNekoStore } from './store/useNekoStore'
+import { useNekoStore, type Element, type Point, type View } from './store/useNekoStore'
 import { useCanvasTransform } from './hooks/useCanvasTransform'
 import { useTouchGestures } from './hooks/useTouchGestures'
-import { useDrawing } from './hooks/useDrawing'
 
 import Navbar from './components/Navbar'
 import Toolbar from './components/Toolbar'
@@ -15,8 +15,7 @@ import WelcomeModal from './components/WelcomeModal'
 import EmptyState from './components/EmptyState'
 import StatusBar from './components/StatusBar'
 
-import rough from 'roughjs/bin/rough'
-
+const DEFAULT_FILL = '#1f2937'
 const DEFAULT_STROKE = '#6366f1'
 const DEFAULT_STROKE_WIDTH = 2
 
@@ -40,7 +39,7 @@ export default function App() {
   const [isDrawing, setIsDrawing] = useState(false)
   const [showLayers, setShowLayers] = useState(false)
 
-  const currentPencilPointsRef = useRef<any[]>([])
+  const currentPencilPointsRef = useRef<Point[]>([])
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const containerRef = useRef<HTMLDivElement>(null)
   const roughRef = useRef<any>(null)
@@ -48,44 +47,26 @@ export default function App() {
   const imageCacheRef = useRef<Map<string, HTMLImageElement>>(new Map())
   const fileInputRef = useRef<HTMLInputElement>(null)
 
-  const { screenToWorld, worldToScreen, getElementBounds, hitTest } = useCanvasTransform(view)
+  const { screenToWorld, getElementBounds, hitTest } = useCanvasTransform(view)
 
-  const getElementAtPoint = useCallback((wx: number, wy: number) => {
+  // Update elements with history + autosave
+  const updateElements = useCallback((newElements: Element[]) => {
+    setElements(newElements)
+    pushToHistory(newElements)
+    const timeout = setTimeout(() => {
+      localStorage.setItem('neko-project-v2', JSON.stringify({
+        elements: newElements, view, projectName, savedAt: Date.now()
+      }))
+    }, 500)
+    return () => clearTimeout(timeout)
+  }, [setElements, pushToHistory, view, projectName])
+
+  const getElementAtPoint = useCallback((wx: number, wy: number): Element | null => {
     for (let i = elements.length - 1; i >= 0; i--) {
       if (hitTest(elements[i], wx, wy)) return elements[i]
     }
     return null
   }, [elements, hitTest])
-
-  const { startDrawing, finishDrawing } = useDrawing({
-    tool,
-    elements,
-    updateElements: (els) => {
-      setElements(els)
-      pushToHistory(els)
-      saveToStorage()
-    },
-    setSelectedIds,
-    setTool,
-    screenToWorld,
-    getElementAtPoint,
-    getElementBounds,
-  })
-
-  const { handleTouchStart, handleTouchMove, handleTouchEnd } = useTouchGestures(
-    view,
-    setView,
-    (type, clientX, clientY) => {
-      if (type === 'down') handleMouseDown({ clientX, clientY } as any)
-      else if (type === 'move') handleMouseMove({ clientX, clientY } as any)
-      else handleMouseUp({} as any)
-    }
-  )
-
-  useEffect(() => {
-    loadFromStorage()
-    if (localStorage.getItem('neko-visited')) setShowWelcome(false)
-  }, [])
 
   const draw = useCallback(() => {
     const canvas = canvasRef.current
@@ -96,15 +77,15 @@ export default function App() {
 
     ctx.strokeStyle = '#1f2937'
     ctx.lineWidth = 1
-    const grid = 50
-    const startX = Math.floor((0 - view.x) / view.zoom / grid) * grid
-    const endX = Math.ceil((canvas.width - view.x) / view.zoom / grid) * grid
-    const startY = Math.floor((0 - view.y) / view.zoom / grid) * grid
-    const endY = Math.ceil((canvas.height - view.y) / view.zoom / grid) * grid
+    const gridSize = 50
+    const startX = Math.floor((0 - view.x) / view.zoom / gridSize) * gridSize
+    const endX = Math.ceil((canvas.width - view.x) / view.zoom / gridSize) * gridSize
+    const startY = Math.floor((0 - view.y) / view.zoom / gridSize) * gridSize
+    const endY = Math.ceil((canvas.height - view.y) / view.zoom / gridSize) * gridSize
 
     ctx.beginPath()
-    for (let x = startX; x <= endX; x += grid) { ctx.moveTo(x * view.zoom + view.x, 0); ctx.lineTo(x * view.zoom + view.x, canvas.height) }
-    for (let y = startY; y <= endY; y += grid) { ctx.moveTo(0, y * view.zoom + view.y); ctx.lineTo(canvas.width, y * view.zoom + view.y) }
+    for (let x = startX; x <= endX; x += gridSize) { ctx.moveTo(x * view.zoom + view.x, 0); ctx.lineTo(x * view.zoom + view.x, canvas.height) }
+    for (let y = startY; y <= endY; y += gridSize) { ctx.moveTo(0, y * view.zoom + view.y); ctx.lineTo(canvas.width, y * view.zoom + view.y) }
     ctx.stroke()
 
     ctx.translate(view.x, view.y)
@@ -115,7 +96,7 @@ export default function App() {
     elements.forEach(el => {
       ctx.save()
       ctx.globalAlpha = el.opacity ?? 1
-      const opts = { fill: el.fill, stroke: el.stroke, strokeWidth: el.strokeWidth, roughness: 1.1, bowing: 0.6 }
+      const opts: any = { fill: el.fill, stroke: el.stroke, strokeWidth: el.strokeWidth, roughness: 1.1, bowing: 0.6 }
 
       if (el.type === 'rect') rc.rectangle(el.x, el.y, el.w || 0, el.h || 0, opts)
       else if (el.type === 'ellipse') rc.ellipse(el.x + (el.w||0)/2, el.y + (el.h||0)/2, el.w||0, el.h||0, opts)
@@ -173,6 +154,7 @@ export default function App() {
     return () => window.removeEventListener('resize', resizeCanvas)
   }, [resizeCanvas])
 
+  // Mouse handlers
   const handleMouseDown = (e: React.MouseEvent) => {
     const rect = canvasRef.current!.getBoundingClientRect()
     const sx = e.clientX - rect.left
@@ -181,6 +163,7 @@ export default function App() {
     lastMouseRef.current = { x: sx, y: sy }
 
     if (tool === 'hand') { setDragState({ type: 'pan', startX: sx, startY: sy }); return }
+
     if (tool === 'select') {
       const hit = getElementAtPoint(world.x, world.y)
       if (hit) {
@@ -192,13 +175,17 @@ export default function App() {
       }
       return
     }
+
     if (tool === 'text') {
       setTextInputPos({ x: e.clientX, y: e.clientY })
       setTextValue('')
       setShowTextInput(true)
       return
     }
-    startDrawing(world, currentPencilPointsRef, setDragState, setIsDrawing)
+
+    setIsDrawing(true)
+    setDragState({ type: 'draw', startX: sx, startY: sy })
+    if (tool === 'pencil') currentPencilPointsRef.current = [world]
   }
 
   const handleMouseMove = (e: React.MouseEvent) => {
@@ -209,40 +196,83 @@ export default function App() {
     const world = screenToWorld(sx, sy)
 
     if (dragState.type === 'pan') {
-      setView(v => ({ ...v, x: v.x + (sx - dragState.startX), y: v.y + (sy - dragState.startY) }))
+      const dx = sx - dragState.startX
+      const dy = sy - dragState.startY
+      setView(v => ({ ...v, x: v.x + dx, y: v.y + dy }))
       setDragState({ ...dragState, startX: sx, startY: sy })
       return
     }
+
     if (dragState.type === 'move' && dragState.elementId) {
       const dx = world.x - dragState.startX
       const dy = world.y - dragState.startY
-      const newEls = elements.map(el => {
+      const newElements = elements.map(el => {
         if (!selectedIds.includes(el.id)) return el
         if (el.points) return { ...el, points: el.points.map(p => ({ x: p.x + dx, y: p.y + dy })) }
         return { ...el, x: el.x + dx, y: el.y + dy }
       })
-      setElements(newEls)
+      setElements(newElements)
       return
     }
+
     if (dragState.type === 'draw' && tool === 'pencil') {
-      currentPencilPointsRef.current.push(world)
+      currentPencilPointsRef.current = [...currentPencilPointsRef.current, world]
       draw()
       return
     }
-    draw()
+    if (dragState.type === 'draw' || dragState.type === 'marquee') draw()
   }
 
   const handleMouseUp = (e: React.MouseEvent) => {
     const world = screenToWorld(lastMouseRef.current.x, lastMouseRef.current.y)
+
     if (dragState.type === 'pan') { setDragState({ type: null, startX: 0, startY: 0 }); return }
-    if (dragState.type === 'move') { 
-      // In real app connect to store update
+
+    if (dragState.type === 'move') {
+      updateElements(elements)
       setDragState({ type: null, startX: 0, startY: 0 })
-      return 
+      return
     }
+
+    if (dragState.type === 'marquee' && dragState.marqueeStart) {
+      const end = world
+      const x1 = Math.min(dragState.marqueeStart.x, end.x)
+      const y1 = Math.min(dragState.marqueeStart.y, end.y)
+      const x2 = Math.max(dragState.marqueeStart.x, end.x)
+      const y2 = Math.max(dragState.marqueeStart.y, end.y)
+      const selected = elements.filter(el => {
+        const b = getElementBounds(el)
+        return b.x < x2 && b.x + b.w > x1 && b.y < y2 && b.y + b.h > y1
+      }).map(el => el.id)
+      setSelectedIds(selected)
+      setDragState({ type: null, startX: 0, startY: 0 })
+      return
+    }
+
     if (dragState.type === 'draw' || isDrawing) {
       const startWorld = screenToWorld(dragState.startX || 0, dragState.startY || 0)
-      finishDrawing(startWorld, world, currentPencilPointsRef, setDragState, setIsDrawing)
+
+      if (tool === 'pencil' && currentPencilPointsRef.current.length > 1) {
+        const pts = currentPencilPointsRef.current
+        const newEl: Element = { id: crypto.randomUUID(), type: 'pencil', x: pts[0].x, y: pts[0].y, points: pts, fill: 'transparent', stroke: DEFAULT_STROKE, strokeWidth: DEFAULT_STROKE_WIDTH, opacity: 1 }
+        updateElements([...elements, newEl])
+        currentPencilPointsRef.current = []
+      } 
+      else if (['rect', 'ellipse', 'diamond'].includes(tool)) {
+        const w = Math.abs(world.x - startWorld.x)
+        const h = Math.abs(world.y - startWorld.y)
+        if (w > 6 && h > 6) {
+          const newEl: Element = { id: crypto.randomUUID(), type: tool as any, x: Math.min(startWorld.x, world.x), y: Math.min(startWorld.y, world.y), w, h, fill: DEFAULT_FILL, stroke: DEFAULT_STROKE, strokeWidth: DEFAULT_STROKE_WIDTH, opacity: 1 }
+          updateElements([...elements, newEl])
+        }
+      } 
+      else if (tool === 'line' || tool === 'arrow') {
+        const newEl: Element = { id: crypto.randomUUID(), type: tool as any, x: startWorld.x, y: startWorld.y, points: [startWorld, world], fill: 'transparent', stroke: DEFAULT_STROKE, strokeWidth: DEFAULT_STROKE_WIDTH, opacity: 1 }
+        updateElements([...elements, newEl])
+      }
+
+      setDragState({ type: null, startX: 0, startY: 0 })
+      setIsDrawing(false)
     }
   }
 
@@ -256,12 +286,20 @@ export default function App() {
     setView({ x: sx - before.x * nz, y: sy - before.y * nz, zoom: nz })
   }
 
+  // Touch
+  const { handleTouchStart, handleTouchMove, handleTouchEnd } = useTouchGestures(view, setView, (type, clientX, clientY) => {
+    const fake = { clientX, clientY } as any
+    if (type === 'down') handleMouseDown(fake)
+    else if (type === 'move') handleMouseMove(fake)
+    else handleMouseUp(fake)
+  })
+
   const commitText = () => {
     if (!textValue.trim()) return setShowTextInput(false)
     const rect = canvasRef.current!.getBoundingClientRect()
     const world = screenToWorld(textInputPos.x - rect.left, textInputPos.y - rect.top)
-    const newEl = { id: crypto.randomUUID(), type: 'text' as const, x: world.x, y: world.y, text: textValue.trim(), fontSize: 18, fill: 'transparent', stroke: DEFAULT_STROKE, strokeWidth: 1, opacity: 1 }
-    // updateElements
+    const newEl: Element = { id: crypto.randomUUID(), type: 'text', x: world.x, y: world.y, text: textValue.trim(), fontSize: 18, fill: 'transparent', stroke: DEFAULT_STROKE, strokeWidth: 1, opacity: 1 }
+    updateElements([...elements, newEl])
     setShowTextInput(false)
     setTextValue('')
     setTool('select')
@@ -269,35 +307,72 @@ export default function App() {
 
   const deleteSelected = () => {
     if (!selectedIds.length) return
-    // storeUpdateElements
+    updateElements(elements.filter(el => !selectedIds.includes(el.id)))
     setSelectedIds([])
     toast.success('Deleted')
   }
 
-  const selectedElement = selectedIds.length === 1 ? elements.find(e => e.id === selectedIds[0]) : null
+  const exportPNG = () => toast(elements.length ? 'PNG exported (demo)' : 'Nothing to export')
+  const exportSVG = () => {
+    if (!elements.length) return toast.error('Nothing to export')
+    let svg = `<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="800">`
+    elements.forEach(el => {
+      if (el.type === 'rect') svg += `<rect x="${el.x}" y="${el.y}" width="${el.w}" height="${el.h}" fill="${el.fill}" stroke="${el.stroke}" stroke-width="${el.strokeWidth}"/>`
+      else if (el.type === 'text' && el.text) svg += `<text x="${el.x}" y="${el.y + 18}" fill="${el.stroke}" font-size="18">${el.text}</text>`
+    })
+    svg += `</svg>`
+    const url = URL.createObjectURL(new Blob([svg], { type: 'image/svg+xml' }))
+    const a = document.createElement('a')
+    a.href = url; a.download = `${projectName}.svg`; a.click(); URL.revokeObjectURL(url)
+    toast.success('SVG exported')
+  }
+
+  const saveProject = () => {
+    const data = { elements, view, projectName }
+    const url = URL.createObjectURL(new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' }))
+    const a = document.createElement('a')
+    a.href = url; a.download = `${projectName}.neko.json`; a.click(); URL.revokeObjectURL(url)
+    toast.success('Project saved')
+  }
+
+  const loadProject = (file: File) => {
+    const reader = new FileReader()
+    reader.onload = (e) => {
+      try {
+        const data = JSON.parse(e.target?.result as string)
+        if (data.elements) {
+          setElements(data.elements)
+          if (data.view) setView(data.view)
+          if (data.projectName) setProjectName(data.projectName)
+          setSelectedIds([])
+          toast.success('Project loaded')
+        }
+      } catch { toast.error('Invalid file') }
+    }
+    reader.readAsText(file)
+  }
+
+  const selectedElement = selectedIds.length === 1 ? elements.find(el => el.id === selectedIds[0]) : null
 
   return (
     <div className="neko-app">
-      <Toaster position="top-center" richColors />
+      <Toaster position="top-center" richColors closeButton />
 
       <Navbar
         projectName={projectName}
         onProjectNameChange={setProjectName}
-        onSave={() => toast('Save coming soon')}
+        onSave={saveProject}
         onLoad={() => fileInputRef.current?.click()}
-        onExportPNG={() => toast('PNG export')}
-        onExportSVG={() => toast('SVG export improved')}
+        onExportPNG={exportPNG}
+        onExportSVG={exportSVG}
         onToggleLayers={() => setShowLayers(!showLayers)}
       />
 
       <div className="main" ref={containerRef}>
         <Toolbar tool={tool} onToolChange={setTool} onUndo={undo} onRedo={redo} onDelete={deleteSelected} hasSelection={selectedIds.length > 0} />
 
-        <div
-          className={`canvas-container ${tool === 'hand' ? 'hand' : ''}`}
-          onMouseDown={handleMouseDown}
-          onMouseMove={handleMouseMove}
-          onMouseUp={handleMouseUp}
+        <div className={`canvas-container ${tool === 'hand' ? 'hand' : ''}`}
+          onMouseDown={handleMouseDown} onMouseMove={handleMouseMove} onMouseUp={handleMouseUp} onMouseLeave={handleMouseUp}
           onWheel={handleWheel}
           onTouchStart={(e) => handleTouchStart(e, canvasRef.current!.getBoundingClientRect())}
           onTouchMove={(e) => handleTouchMove(e, canvasRef.current!.getBoundingClientRect())}
@@ -306,27 +381,39 @@ export default function App() {
           <canvas ref={canvasRef} />
 
           <AnimatePresence>
-            {elements.length === 0 && <EmptyState onStartDrawing={() => setTool('pencil')} />}
+            {elements.length === 0 && !dragState.type && <EmptyState onStartDrawing={() => setTool('pencil')} />}
           </AnimatePresence>
 
           {showTextInput && (
             <div className="text-input-overlay" style={{ left: textInputPos.x, top: textInputPos.y }}>
-              <input autoFocus value={textValue} onChange={e => setTextValue(e.target.value)} onKeyDown={e => { if (e.key === 'Enter') commitText(); if (e.key === 'Escape') setShowTextInput(false) }} onBlur={commitText} placeholder="Type..." />
+              <input autoFocus value={textValue} onChange={e => setTextValue(e.target.value)} onKeyDown={e => { if (e.key === 'Enter') commitText(); if (e.key === 'Escape') setShowTextInput(false) }} onBlur={commitText} placeholder="Type text..." />
             </div>
           )}
         </div>
 
         <AnimatePresence>
-          {selectedElement && <PropertiesPanel element={selectedElement} onUpdate={(u) => { /* update logic */ }} />}
+          {selectedElement && (
+            <PropertiesPanel element={selectedElement} onUpdate={(updates) => updateElements(elements.map(el => el.id === selectedElement.id ? { ...el, ...updates } : el))} />
+          )}
         </AnimatePresence>
 
         <AnimatePresence>
-          {showLayers && <LayersPanel elements={elements} selectedIds={selectedIds} onSelect={id => setSelectedIds([id])} onDelete={id => { /* delete */ }} />}
+          {showLayers && (
+            <LayersPanel
+              elements={elements}
+              selectedIds={selectedIds}
+              onSelect={(id) => setSelectedIds([id])}
+              onDelete={(id) => {
+                updateElements(elements.filter(el => el.id !== id))
+                if (selectedIds.includes(id)) setSelectedIds([])
+              }}
+            />
+          )}
         </AnimatePresence>
 
         <StatusBar tool={tool} elementCount={elements.length} zoom={view.zoom} selectedCount={selectedIds.length} />
 
-        <input type="file" ref={fileInputRef} className="hidden" accept=".json" onChange={e => e.target.files && toast('Load project')} />
+        <input type="file" ref={fileInputRef} className="hidden" accept=".json" onChange={e => e.target.files && loadProject(e.target.files[0])} />
       </div>
 
       <WelcomeModal open={showWelcome} onClose={() => { setShowWelcome(false); localStorage.setItem('neko-visited', 'true') }} />
