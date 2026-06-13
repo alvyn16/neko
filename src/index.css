@@ -2,25 +2,46 @@
 @tailwind components;
 @tailwind utilities;
 
+/* ============================================
+   NEKO — Claude-inspired Minimalist Theme
+   Calm, premium, professional whiteboard UI
+   ============================================ */
+
 :root {
-  --neko-bg: #0a0a0c;
-  --neko-surface: #111113;
-  --neko-panel: #18181b;
-  --neko-border: #27272a;
-  --neko-text: #e4e4e7;
-  --neko-muted: #71717a;
-  --neko-accent: #c084fc;
-  --neko-accent-dark: #a855f7;
+  /* Backgrounds */
+  --bg: #0a0a0c;
+  --surface: #111113;
+  --panel: #18181b;
+  --panel-hover: #27272a;
+
+  /* Text */
+  --text: #e4e4e7;
+  --text-muted: #71717a;
+  --text-subtle: #52525b;
+
+  /* Borders & Accents */
+  --border: #27272a;
+  --border-strong: #3f3f46;
+  --accent: #6366f1;        /* Indigo-500 - calm & professional */
+  --accent-hover: #4f46e5;
+  --accent-subtle: #312e81;
+
+  /* Shadows - very soft, minimal elevation */
+  --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.3);
+  --shadow: 0 4px 6px -1px rgb(0 0 0 / 0.3), 0 2px 4px -2px rgb(0 0 0 / 0.3);
+  --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.3), 0 4px 6px -4px rgb(0 0 0 / 0.3);
 }
 
 body {
-  font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-  background: var(--neko-bg);
-  color: var(--neko-text);
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  background: var(--bg);
+  color: var(--text);
   margin: 0;
   overflow: hidden;
+  -webkit-font-smoothing: antialiased;
 }
 
+/* App Shell */
 .neko-app {
   display: flex;
   flex-direction: column;
@@ -29,247 +50,398 @@ body {
   overflow: hidden;
 }
 
-/* Top Navbar */
+/* ========== Navbar ========== */
 .navbar {
+  height: 56px;
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 0.5rem 1rem;
-  background: var(--neko-surface);
-  border-bottom: 1px solid var(--neko-border);
+  padding: 0 20px;
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
   z-index: 50;
+  flex-shrink: 0;
 }
 
 .navbar-left {
   display: flex;
   align-items: center;
-  gap: 1rem;
+  gap: 16px;
 }
 
 .logo {
   display: flex;
   align-items: center;
-  gap: 0.5rem;
+  gap: 8px;
   font-weight: 700;
-  font-size: 1.25rem;
+  font-size: 20px;
+  letter-spacing: -0.02em;
   color: white;
 }
 
 .logo-dot {
-  width: 8px;
-  height: 8px;
-  background: var(--neko-accent);
-  border-radius: 50%;
+  width: 9px;
+  height: 9px;
+  background: var(--accent);
+  border-radius: 9999px;
 }
 
-.project-name {
+.project-name-input {
   background: transparent;
   border: 1px solid transparent;
-  color: var(--neko-text);
-  font-size: 0.875rem;
-  padding: 0.25rem 0.5rem;
-  border-radius: 4px;
-  min-width: 180px;
+  color: var(--text);
+  font-size: 15px;
+  font-weight: 500;
+  padding: 6px 10px;
+  border-radius: 6px;
+  min-width: 220px;
+  transition: all 0.1s ease;
 }
 
-.project-name:focus {
+.project-name-input:hover {
+  background: var(--panel);
+  border-color: var(--border);
+}
+
+.project-name-input:focus {
   outline: none;
-  border-color: var(--neko-accent);
-  background: var(--neko-panel);
+  background: var(--panel);
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-subtle);
 }
 
-/* Main Layout */
+.navbar-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/* ========== Main Area ========== */
 .main {
   display: flex;
   flex: 1;
   overflow: hidden;
   position: relative;
+  background: var(--bg);
 }
 
-/* Toolbar */
+/* ========== Toolbar (Left) ========== */
 .toolbar {
   position: absolute;
-  left: 1rem;
-  top: 1rem;
+  left: 16px;
+  top: 16px;
   z-index: 40;
-  background: rgba(24, 24, 27, 0.95);
-  backdrop-filter: blur(12px);
-  border: 1px solid var(--neko-border);
-  border-radius: 12px;
-  padding: 0.5rem;
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 8px 6px;
   display: flex;
   flex-direction: column;
-  gap: 0.25rem;
-  box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.3);
+  gap: 4px;
+  box-shadow: var(--shadow);
+  backdrop-filter: blur(12px);
+}
+
+.tool-group {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid var(--border);
+}
+
+.tool-group:last-child {
+  padding-bottom: 0;
+  border-bottom: none;
 }
 
 .tool-btn {
-  width: 42px;
-  height: 42px;
+  width: 44px;
+  height: 44px;
   display: flex;
   align-items: center;
   justify-content: center;
-  border-radius: 8px;
-  color: var(--neko-muted);
-  transition: all 0.1s ease;
-  border: none;
+  border-radius: 10px;
+  color: var(--text-muted);
   background: transparent;
+  border: none;
   cursor: pointer;
+  transition: all 0.1s cubic-bezier(0.23, 1, 0.32, 1);
+  position: relative;
 }
 
 .tool-btn:hover {
-  background: var(--neko-panel);
-  color: var(--neko-text);
+  background: var(--panel-hover);
+  color: var(--text);
 }
 
 .tool-btn.active {
-  background: var(--neko-accent);
+  background: var(--accent);
   color: white;
+  box-shadow: 0 0 0 1px var(--accent-hover);
 }
 
-/* Canvas Container */
+.tool-btn svg {
+  width: 20px;
+  height: 20px;
+}
+
+/* ========== Canvas ========== */
 .canvas-container {
   flex: 1;
   position: relative;
   overflow: hidden;
-  background: #0a0a0c;
-  cursor: crosshair;
-}
-
-.canvas-container.hand {
-  cursor: grab;
-}
-
-.canvas-container.hand:active {
-  cursor: grabbing;
+  background: #0f0f11;
+  touch-action: none;
+  user-select: none;
+  -webkit-touch-callout: none;
 }
 
 canvas {
   display: block;
-  touch-action: none;
+  image-rendering: crisp-edges;
 }
 
-/* Properties Panel */
-.properties {
+/* Subtle grid on canvas background (CSS) */
+.canvas-container::before {
+  content: '';
   position: absolute;
-  right: 1rem;
-  top: 1rem;
+  inset: 0;
+  background-image: 
+    linear-gradient(rgba(63, 63, 70, 0.08) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(63, 63, 70, 0.08) 1px, transparent 1px);
+  background-size: 50px 50px;
+  pointer-events: none;
+  z-index: 1;
+}
+
+/* ========== Properties Panel (Right) ========== */
+.properties-panel {
+  position: absolute;
+  right: 16px;
+  top: 16px;
   z-index: 40;
-  width: 260px;
-  background: rgba(24, 24, 27, 0.95);
+  width: 280px;
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 20px;
+  box-shadow: var(--shadow-lg);
+  font-size: 14px;
   backdrop-filter: blur(12px);
-  border: 1px solid var(--neko-border);
-  border-radius: 12px;
-  padding: 1rem;
-  box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.3);
-  font-size: 0.875rem;
 }
 
-.properties h3 {
-  font-size: 0.75rem;
+.properties-panel h3 {
+  font-size: 11px;
   font-weight: 600;
-  color: var(--neko-muted);
-  text-transform: uppercase;
   letter-spacing: 0.5px;
-  margin-bottom: 0.75rem;
+  text-transform: uppercase;
+  color: var(--text-subtle);
+  margin-bottom: 14px;
 }
 
-.prop-row {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin-bottom: 0.75rem;
+.prop-section {
+  margin-bottom: 18px;
 }
 
-.prop-row:last-child {
+.prop-section:last-child {
   margin-bottom: 0;
 }
 
 .prop-label {
-  color: var(--neko-muted);
-  font-size: 0.75rem;
+  display: block;
+  font-size: 12px;
+  color: var(--text-muted);
+  margin-bottom: 6px;
+  font-weight: 500;
+}
+
+.color-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
 }
 
 .color-input {
-  width: 42px;
-  height: 28px;
+  width: 52px;
+  height: 32px;
   padding: 0;
-  border: 1px solid var(--neko-border);
-  border-radius: 6px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
   background: transparent;
   cursor: pointer;
+  overflow: hidden;
 }
 
-input[type="range"] {
-  accent-color: var(--neko-accent);
+.color-input::-webkit-color-swatch-wrapper {
+  padding: 0;
+}
+.color-input::-webkit-color-swatch {
+  border: none;
+  border-radius: 6px;
 }
 
-/* Status / Footer */
+.slider {
+  width: 100%;
+  accent-color: var(--accent);
+}
+
+/* ========== Empty State ========== */
+.empty-state {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 20;
+  pointer-events: none;
+}
+
+.empty-state-content {
+  text-align: center;
+  max-width: 420px;
+  padding: 40px;
+  pointer-events: auto;
+}
+
+.empty-state h2 {
+  font-size: 28px;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  margin-bottom: 12px;
+  color: var(--text);
+}
+
+.empty-state p {
+  color: var(--text-muted);
+  font-size: 15px;
+  line-height: 1.6;
+  margin-bottom: 28px;
+}
+
+.quick-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  justify-content: center;
+}
+
+/* ========== Status Bar ========== */
 .status-bar {
   position: absolute;
-  bottom: 0.75rem;
+  bottom: 14px;
   left: 50%;
   transform: translateX(-50%);
   z-index: 30;
-  background: rgba(24, 24, 27, 0.8);
-  backdrop-filter: blur(8px);
-  border: 1px solid var(--neko-border);
-  border-radius: 9999px;
-  padding: 0.25rem 0.75rem;
-  font-size: 0.75rem;
-  color: var(--neko-muted);
+  background: rgba(24, 24, 27, 0.85);
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  padding: 6px 18px;
+  font-size: 12px;
+  color: var(--text-subtle);
   display: flex;
   align-items: center;
-  gap: 1rem;
+  gap: 16px;
+  backdrop-filter: blur(12px);
+  box-shadow: var(--shadow-sm);
 }
 
-/* Buttons */
+.status-bar .divider {
+  width: 1px;
+  height: 12px;
+  background: var(--border);
+}
+
+/* ========== Buttons ========== */
 .btn {
   display: inline-flex;
   align-items: center;
-  gap: 0.5rem;
-  padding: 0.5rem 0.875rem;
-  font-size: 0.875rem;
+  justify-content: center;
+  gap: 8px;
+  padding: 9px 16px;
+  font-size: 14px;
   font-weight: 500;
-  border-radius: 8px;
-  border: 1px solid var(--neko-border);
-  background: var(--neko-panel);
-  color: var(--neko-text);
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  background: var(--panel);
+  color: var(--text);
   cursor: pointer;
-  transition: all 0.1s;
+  transition: all 0.15s cubic-bezier(0.23, 1, 0.32, 1);
+  white-space: nowrap;
 }
 
 .btn:hover {
-  background: #27272a;
-  border-color: #3f3f46;
+  background: var(--panel-hover);
+  border-color: var(--border-strong);
+  transform: translateY(-1px);
 }
 
 .btn-primary {
-  background: var(--neko-accent);
+  background: var(--accent);
   color: white;
-  border-color: var(--neko-accent-dark);
+  border-color: var(--accent);
 }
 
 .btn-primary:hover {
-  background: #a855f7;
+  background: var(--accent-hover);
+  border-color: var(--accent-hover);
 }
 
-/* Text input overlay for adding text */
-.text-input-overlay {
-  position: absolute;
-  z-index: 50;
-  background: var(--neko-panel);
-  border: 1px solid var(--neko-accent);
-  border-radius: 6px;
-  padding: 0.25rem 0.5rem;
-  box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.2);
-}
-
-.text-input-overlay input {
+.btn-ghost {
   background: transparent;
-  border: none;
-  color: white;
-  font-size: 16px;
-  outline: none;
-  min-width: 120px;
+  border-color: transparent;
+}
+
+.btn-ghost:hover {
+  background: var(--panel);
+}
+
+/* Toast (simple elegant) */
+.toast {
+  position: fixed;
+  bottom: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: var(--panel);
+  border: 1px solid var(--border);
+  color: var(--text);
+  padding: 12px 20px;
+  border-radius: 999px;
+  font-size: 14px;
+  box-shadow: var(--shadow-lg);
+  z-index: 100;
+  animation: toastPop 0.2s ease forwards;
+}
+
+@keyframes toastPop {
+  from { opacity: 0; transform: translateX(-50%) translateY(10px); }
+  to { opacity: 1; transform: translateX(-50%) translateY(0); }
+}
+
+/* Accessibility & Focus */
+button:focus-visible,
+input:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+/* Mobile optimizations */
+@media (max-width: 768px) {
+  .toolbar {
+    left: 8px;
+    top: 8px;
+    padding: 6px 4px;
+  }
+  
+  .tool-btn {
+    width: 38px;
+    height: 38px;
+  }
+  
+  .properties-panel {
+    width: 240px;
+    right: 8px;
+    top: 8px;
+    padding: 16px;
+  }
 }
